@@ -3,6 +3,7 @@ import my_event
 import turtle
 import random
 import heapq
+import paddle
 
 class BouncingSimulator:
     def __init__(self, num_balls):
@@ -27,6 +28,18 @@ class BouncingSimulator:
             vy = 10*random.uniform(-1.0, 1.0)
             ball_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
             self.ball_list.append(ball.Ball(ball_radius, x, y, vx, vy, ball_color, i))
+        
+        self.tim = turtle.Turtle()
+        self.tim.showturtle()
+        self.tim.penup()
+        self.tim.goto(0, 100)
+        self.tim.pendown()
+
+        tom = turtle.Turtle()
+        self.my_paddle = paddle.Paddle(150, 50, (255, 0, 0), tom)
+        self.my_paddle.set_location([100, -100])
+
+        self.screen = turtle.Screen()
 
     # updates priority queue with all new events for a_ball
     def __predict(self, a_ball):
@@ -59,18 +72,54 @@ class BouncingSimulator:
 
     def __redraw(self):
         turtle.clear()
+        self.my_paddle.clear()
         self.__draw_border()
+        self.my_paddle.draw()
         for i in range(len(self.ball_list)):
             self.ball_list[i].draw()
         turtle.update()
         heapq.heappush(self.pq, my_event.Event(self.t + 1.0/self.HZ, None, None))
 
+    # begin: event handlers
+    def up(self):
+        self.tim.setheading(90)
+        self.tim.forward(10)
+
+    def down(self):
+        self.tim.setheading(270)
+        self.tim.forward(10)
+
+    def left(self):
+        self.tim.setheading(180)
+        self.tim.forward(10)
+
+    def right(self):
+        self.tim.setheading(0)
+        self.tim.forward(10)
+
+    def move_left(self):
+        self.my_paddle.set_location([self.my_paddle.location[0] - 40, self.my_paddle.location[1]])
+
+    def move_right(self):
+        self.my_paddle.set_location([self.my_paddle.location[0] + 40, self.my_paddle.location[1]])
+    
+    # end: event handlers
 
     def run(self):
         # initialize pq with collision events and redraw event
         for i in range(len(self.ball_list)):
             self.__predict(self.ball_list[i])
         heapq.heappush(self.pq, my_event.Event(0, None, None))
+
+        # begin: listening to keyboard events
+        self.screen.listen()
+        self.screen.onkey(self.up, "Up")
+        self.screen.onkey(self.down, "Down")
+        self.screen.onkey(self.left, "Left")
+        self.screen.onkey(self.right, "Right")
+        self.screen.onkey(self.move_left, "a")
+        self.screen.onkey(self.move_right, "d")
+        # end: listening to keyboard events
 
         while (True):
             e = heapq.heappop(self.pq)
